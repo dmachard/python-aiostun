@@ -139,7 +139,7 @@ class Codec:
             # read attribute
             (attr_type, attr_length,) = struct.unpack("!HH", pl[:4])
 
-            # padding ?
+            # padding ? always a multiple of 4 bytes
             pad_length = ((attr_length+4) % 4)
 
             attrs.append( {"type": attr_type, "value": pl[4:4+attr_length]} )

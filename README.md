@@ -11,7 +11,7 @@
 This module can be installed from [pypi](https://pypi.org/project/aiostun/) website
 
 ```python
-pip install publicaddr
+pip install aiostun
 ```
 
 ## Getting your mapped address
