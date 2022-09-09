@@ -16,7 +16,7 @@ import asyncio
 
 async def main():
 
-    stun_host = "stun.incentre.net"
+    stun_host = "openrelay.metered.ca"
     stun_port = 443
     stun_family = aiostun.FAMILY_IP4
     stun_proto = aiostun.IPPROTO_TLS
