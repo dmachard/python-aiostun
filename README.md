@@ -22,7 +22,7 @@ import asyncio
 
 async def main():
 
-    async with aiostun.Client(host='openrelay.metered.ca', port=443, ipproto=aiostun.IPPROTO_TLS) as stunc:
+    async with aiostun.Client(host='openrelay.metered.ca', port=443, ipproto=aiostun.TLS) as stunc:
         mapped_addr = await stunc.get_mapped_address()
         print(mapped_addr)
 

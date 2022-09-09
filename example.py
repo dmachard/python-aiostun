@@ -17,11 +17,8 @@ import asyncio
 async def main():
 
     stun_host = "openrelay.metered.ca"
-    stun_port = 443
-    stun_family = aiostun.FAMILY_IP4
-    stun_proto = aiostun.IPPROTO_UDP
 
-    async with aiostun.Client(host=stun_host, port=stun_port, family=stun_family, ipproto=stun_proto) as stunc:
+    async with aiostun.Client(host=stun_host, port=443, family=aiostun.IP4, proto=aiostun.UDP) as stunc:
         mapped_addr = await stunc.get_mapped_address()
         print(mapped_addr)
 

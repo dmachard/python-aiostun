@@ -63,12 +63,12 @@ class StunTcpProtocol:
 
 
 class Client:
-    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, ipproto=constants.IPPROTO_UDP):
+    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, proto=constants.IPPROTO_UDP):
         """init"""
         self._host = host
         self._port = port
         self._family = family
-        self._ipproto = ipproto
+        self._ipproto = proto
         self._stun_codec = stun.Codec()
         self._transport = None
         self._timeout = 5
