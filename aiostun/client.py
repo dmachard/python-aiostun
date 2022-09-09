@@ -116,22 +116,40 @@ class Client:
         if self._transport is not None:
             self._transport.close()
 
-    async def bind_request(self):
-        """send bind request"""
+    async def send_request(self, msg_class, msg_method):
+        """wait request"""
         if self._transport is None:
             return None
 
-        m = stun.StunMessage(constants.CLASS_REQUEST, constants.METHOD_BINDING)
+        # prepare stun message and encoded it
+        m = stun.StunMessage(msg_class, msg_method)
         request = self._stun_codec.encode(m)
 
+        # send it
         self._stun_codec.send(data=request)
 
+        return m
+
+    async def wait_for_resp(self):
+        """wait for response"""
+        if self._transport is None:
+            return None
+
         resp = await asyncio.wait_for(self._stun_codec._queue.get(), timeout=self._timeout)
+        return resp
+
+    async def bind_request(self):
+        """send bind request"""
+        req = await self.send_request(msg_class=constants.CLASS_REQUEST, msg_method=constants.METHOD_BINDING)
+        if req is None:
+            return req
+
+        resp = await self.wait_for_resp()
 
         #If the message class is "Success Response" or "Error Response"
         # checks that the transaction ID matches the request
         if resp.msgclass in [ constants.CLASS_SUCCESS, constants.CLASS_ERROR]:
-            if m.transaction_id != resp.transaction_id:
+            if req.transaction_id != resp.transaction_id:
                 return None
 
         return resp

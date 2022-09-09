@@ -24,11 +24,15 @@ class StunMessage():
 
     def get_class(self):
         """return class name"""
-        return constants.CLASS_NAMES[self.msgclass]
+        if self.msgclass in constants.CLASS_NAMES:
+            return constants.CLASS_NAMES[self.msgclass]
+        return "%s" % self.msgclass
 
     def get_method(self):
         """return method name"""
-        return constants.METHOD_NAMES[self.msgmethod]
+        if self.msgmethod in constants.METHOD_NAMES:
+            return constants.METHOD_NAMES[self.msgmethod]
+        return "%s" % self.msgmethod
 
     def get_attribute(self, atype):
         """get attribute"""
@@ -79,7 +83,9 @@ class StunMessage():
     def __str__(self):
         """to string representation"""
         ret = ["Header:"]
-        ret.append("\tMessage Type: %s %s" % (constants.CLASS_NAMES[self.msgclass], constants.METHOD_NAMES[self.msgmethod]))
+        ret.append("\tMessage Type:")
+        ret.append("\t\tClass: %s" % self.get_class())
+        ret.append("\t\tMethod: %s" % self.get_method())
         ret.append("\tMessage Length: %s" % self.msglength)
         ret.append("\tMessage TransactionID: %s" % self.transaction_id.decode())
 
