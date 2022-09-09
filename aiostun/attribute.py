@@ -3,6 +3,7 @@ import ipaddress
 
 from aiostun import constants
 
+
 class Attribute:
     def __init__(self, msg_hdr, attr_type, attr_value):
         """init"""
@@ -108,3 +109,45 @@ class Fingerprint(Attribute):
         return [ "CRC-32: 0x%s" % self.params["crc32"].hex() ]
     def decode(self):
         self.params["crc32"] = self.attr_value
+
+class ErrorCode(Attribute):
+    def to_string(self):
+        ret = [ "Code: %s" % self.params["code"] ]
+        ret.append( "Phrase: %s" % self.params["phrase"])
+        return ret
+
+    def decode(self):
+        err_code = self.attr_value[2]*100 + self.attr_value[3]
+        err_phrase = self.attr_value[4:].decode()
+        self.params["code"] = err_code
+        self.params["phrase"] = err_phrase
+
+class Nonce(Attribute):
+    def to_string(self):
+        return [ "Nonce: 0x%s" % self.params["nonce"].decode()]
+    def decode(self):
+        self.params["nonce"] = self.attr_value
+
+class Realm(Attribute):
+    def to_string(self):
+        return [ "Realm: %s" % self.params["realm"] ]
+    def decode(self):
+        self.params["realm"] = self.attr_value.decode()
+
+SUPPORTED_ATTRS = {
+    constants.ATTR_XOR_MAPPED_ADDRESS: XorMappedAddr,
+    constants.ATTR_XOR_MAPPED_ADDRESS_OPTIONAL: XorMappedAddr,
+    constants.ATTR_MAPPED_ADDRESS: MappedAddr,
+    constants.ATTR_OTHER_ADDRESS: OtherAddress,
+    constants.ATTR_RESPONSE_ORIGIN: ResponseOrigin,
+    constants.ATTR_SOURCE_ADDRESS: SourceAddress,
+    constants.ATTR_CHANGED_ADDRESS: ChangedAddress,
+    constants.ATTR_SOFTWARE: Software,
+    constants.ATTR_FINGERPRINT: Fingerprint,
+    constants.ATTR_ERROR_CODE: ErrorCode,
+    constants.ATTR_NONCE: Nonce,
+    constants.ATTR_REALM: Realm,
+}
+
+def get(msg_hdr, attr_type, attr_value):
+    return SUPPORTED_ATTRS[attr_type](msg_hdr, attr_type, attr_value)

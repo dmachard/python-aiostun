@@ -26,13 +26,13 @@ class StunMessage():
         """return class name"""
         if self.msgclass in constants.CLASS_NAMES:
             return constants.CLASS_NAMES[self.msgclass]
-        return "%s" % self.msgclass
+        return "%s (Unsupported)" % self.msgclass
 
     def get_method(self):
         """return method name"""
         if self.msgmethod in constants.METHOD_NAMES:
             return constants.METHOD_NAMES[self.msgmethod]
-        return "%s" % self.msgmethod
+        return "%s (Unsupported)" % self.msgmethod
 
     def get_attribute(self, atype):
         """get attribute"""
@@ -46,30 +46,8 @@ class StunMessage():
         for attr in attrs:
             attr_obj = None
 
-            if attr["type"] in [ constants.ATTR_XOR_MAPPED_ADDRESS, constants.ATTR_XOR_MAPPED_ADDRESS_OPTIONAL ]:
-                attr_obj = attribute.XorMappedAddr(self, attr["type"], attr["value"])
-
-            elif attr["type"] == constants.ATTR_MAPPED_ADDRESS:
-                attr_obj = attribute.MappedAddr(self, attr["type"], attr["value"])
-
-            elif attr["type"] == constants.ATTR_SOFTWARE:
-                attr_obj = attribute.Software(self, attr["type"], attr["value"])
-
-            elif attr["type"] == constants.ATTR_OTHER_ADDRESS:
-                attr_obj = attribute.OtherAddress(self, attr["type"], attr["value"])
-
-            elif attr["type"] == constants.ATTR_RESPONSE_ORIGIN:
-                attr_obj = attribute.ResponseOrigin(self, attr["type"], attr["value"])
-
-            elif attr["type"] == constants.ATTR_FINGERPRINT:
-                attr_obj = attribute.Fingerprint(self, attr["type"], attr["value"])
-
-            elif attr["type"] == constants.ATTR_SOURCE_ADDRESS:
-                attr_obj = attribute.SourceAddress(self, attr["type"], attr["value"])
-            
-            elif attr["type"] == constants.ATTR_CHANGED_ADDRESS:
-                attr_obj = attribute.ChangedAddress(self, attr["type"], attr["value"])
-
+            if attr["type"] in attribute.SUPPORTED_ATTRS:
+                attr_obj = attribute.get(self, attr["type"], attr["value"])
             else:
                 attr_obj = attribute.Attribute(self, attr["type"], attr["value"])
 
