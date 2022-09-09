@@ -65,7 +65,7 @@ class XorMappedAddr(Attribute):
         self.params["port"] = port
         self.params["ip"] = ip
 
-class MappedAddr(Attribute):
+class AttributeAddr(Attribute):
     def to_string(self):
         """human string representation"""
         ret = [ "Protocol Family: %s" % self.params["family"] ]
@@ -90,6 +90,12 @@ class MappedAddr(Attribute):
         self.params["family"] = constants.FAMILY_NAMES[family]
         self.params["port"] = port
         self.params["ip"] = ip
+
+class MappedAddr(AttributeAddr): pass
+class OtherAddress(AttributeAddr): pass
+class ResponseOrigin(AttributeAddr): pass
+class SourceAddress(AttributeAddr): pass
+class ChangedAddress(AttributeAddr): pass
 
 class Software(Attribute):
     def to_string(self):
@@ -97,112 +103,8 @@ class Software(Attribute):
     def decode(self):
         self.params["description"] = self.attr_value.decode()
 
-class OtherAddress(Attribute):
-    def to_string(self):
-        """human string representation"""
-        ret = [ "Protocol Family: %s" % self.params["family"] ]
-        ret.append( "IP: %s" % self.params["ip"] )
-        ret.append( "Port: %s" % self.params["port"] )
-        return ret
-
-    def decode(self):
-        """decode the attribute"""
-        # read family protocol, ipv4 (1) or ipv6 (2)
-        (family,) = struct.unpack("!B", self.attr_value[1:2])
-        if family > 0x02 and family < 0x01:
-            return False
-
-        # decode port and ip
-        (port,) = struct.unpack("!H", self.attr_value[2:4])
-        if family == 0x01:
-            ip = "%s" % ipaddress.IPv4Address(self.attr_value[4:])
-        if family == 0x02:
-            ip = "%s" % ipaddress.IPv6Address(self.attr_value[4:])
-
-        self.params["family"] = constants.FAMILY_NAMES[family]
-        self.params["port"] = port
-        self.params["ip"] = ip
-
-class ResponseOrigin(Attribute):
-    def to_string(self):
-        """human string representation"""
-        ret = [ "Protocol Family: %s" % self.params["family"] ]
-        ret.append( "IP: %s" % self.params["ip"] )
-        ret.append( "Port: %s" % self.params["port"] )
-        return ret
-
-    def decode(self):
-        """decode the attribute"""
-        # read family protocol, ipv4 (1) or ipv6 (2)
-        (family,) = struct.unpack("!B", self.attr_value[1:2])
-        if family > 0x02 and family < 0x01:
-            return False
-
-        # decode port and ip
-        (port,) = struct.unpack("!H", self.attr_value[2:4])
-        if family == 0x01:
-            ip = "%s" % ipaddress.IPv4Address(self.attr_value[4:])
-        if family == 0x02:
-            ip = "%s" % ipaddress.IPv6Address(self.attr_value[4:])
-
-        self.params["family"] = constants.FAMILY_NAMES[family]
-        self.params["port"] = port
-        self.params["ip"] = ip
-
 class Fingerprint(Attribute):
     def to_string(self):
         return [ "CRC-32: 0x%s" % self.params["crc32"].hex() ]
     def decode(self):
         self.params["crc32"] = self.attr_value
-
-class SourceAddress(Attribute):
-    def to_string(self):
-        """human string representation"""
-        ret = [ "Protocol Family: %s" % self.params["family"] ]
-        ret.append( "IP: %s" % self.params["ip"] )
-        ret.append( "Port: %s" % self.params["port"] )
-        return ret
-
-    def decode(self):
-        """decode the attribute"""
-        # read family protocol, ipv4 (1) or ipv6 (2)
-        (family,) = struct.unpack("!B", self.attr_value[1:2])
-        if family > 0x02 and family < 0x01:
-            return False
-
-        # decode port and ip
-        (port,) = struct.unpack("!H", self.attr_value[2:4])
-        if family == 0x01:
-            ip = "%s" % ipaddress.IPv4Address(self.attr_value[4:])
-        if family == 0x02:
-            ip = "%s" % ipaddress.IPv6Address(self.attr_value[4:])
-
-        self.params["family"] = constants.FAMILY_NAMES[family]
-        self.params["port"] = port
-        self.params["ip"] = ip
-
-class ChangedAddress(Attribute):
-    def to_string(self):
-        """human string representation"""
-        ret = [ "Protocol Family: %s" % self.params["family"] ]
-        ret.append( "IP: %s" % self.params["ip"] )
-        ret.append( "Port: %s" % self.params["port"] )
-        return ret
-
-    def decode(self):
-        """decode the attribute"""
-        # read family protocol, ipv4 (1) or ipv6 (2)
-        (family,) = struct.unpack("!B", self.attr_value[1:2])
-        if family > 0x02 and family < 0x01:
-            return False
-
-        # decode port and ip
-        (port,) = struct.unpack("!H", self.attr_value[2:4])
-        if family == 0x01:
-            ip = "%s" % ipaddress.IPv4Address(self.attr_value[4:])
-        if family == 0x02:
-            ip = "%s" % ipaddress.IPv6Address(self.attr_value[4:])
-
-        self.params["family"] = constants.FAMILY_NAMES[family]
-        self.params["port"] = port
-        self.params["ip"] = ip
