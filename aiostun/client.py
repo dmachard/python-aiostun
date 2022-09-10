@@ -116,19 +116,18 @@ class Client:
         if self._transport is not None:
             self._transport.close()
 
-    async def send_request(self, msg_class, msg_method):
+    def send_request(self, req):
         """wait request"""
         if self._transport is None:
-            return None
+            return False
 
-        # prepare stun message and encoded it
-        m = stun.StunMessage(msg_class, msg_method)
-        request = self._stun_codec.encode(m)
+        # encode stun message
+        data = self._stun_codec.encode(req)
 
         # send it
-        self._stun_codec.send(data=request)
+        self._stun_codec.send(data=data)
 
-        return m
+        return True
 
     async def wait_for_resp(self):
         """wait for response"""
@@ -140,16 +139,21 @@ class Client:
 
     async def bind_request(self):
         """send bind request"""
-        req = await self.send_request(msg_class=constants.CLASS_REQUEST, msg_method=constants.METHOD_BINDING)
-        if req is None:
-            return req
+        # basic stun message
+        stun_req = stun.Message(constants.CLASS_REQUEST, constants.METHOD_BINDING, [])
 
+        # send it
+        success = self.send_request(req=stun_req)
+        if not success:
+            return {}
+
+        # wait for response
         resp = await self.wait_for_resp()
 
         #If the message class is "Success Response" or "Error Response"
         # checks that the transaction ID matches the request
         if resp.msgclass in [ constants.CLASS_SUCCESS, constants.CLASS_ERROR]:
-            if req.transaction_id != resp.transaction_id:
+            if stun_req.transaction_id != resp.transaction_id:
                 return None
 
         return resp
@@ -162,9 +166,9 @@ class Client:
         if resp is None:
             return mapped_addr
 
-        attr = resp.get_attribute(attribute.XorMappedAddr)
+        attr = resp.get_attribute(attribute.XorMappedAddrAttribute)
         if attr is None:
-            attr = resp.get_attribute(attribute.MappedAddr)
+            attr = resp.get_attribute(attribute.MappedAddrAttribute)
             if attr is None:
                 return mapped_addr
 

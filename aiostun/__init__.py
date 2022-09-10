@@ -1,4 +1,7 @@
 from aiostun.client import Client
+from aiostun.stun import Message
+
+from aiostun.attribute import AttrRealm, AttrUsername, AttrSoftware
 
 from aiostun.constants import FAMILY_IP4 as IP4
 from aiostun.constants import FAMILY_IP6 as IP6

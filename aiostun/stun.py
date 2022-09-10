@@ -11,16 +11,15 @@ def gen_id(length=12):
     chars = string.ascii_lowercase
     chars += string.ascii_uppercase
     return b''.join([random.choice(chars).encode() for i in range(length)])
-
-class StunMessage():
-    def __init__(self, msgclass, msgmethod):
+class Message(object):
+    def __init__(self, msgclass, msgmethod, attrs):
         """init"""
         self.msglength = 0
         self.msgmethod = msgmethod
         self.msgclass = msgclass
         self.magic_cookie = constants.MAGIC_COOKIE
         self.transaction_id = gen_id()
-        self.attributes = []
+        self.attributes = attrs
 
     def get_class(self):
         """return class name"""
@@ -44,19 +43,47 @@ class StunMessage():
     def decode_attrs(self, attrs):
         """decode all attributes"""
         for attr in attrs:
-            attr_obj = None
-
-            if attr["type"] in attribute.SUPPORTED_ATTRS:
-                attr_obj = attribute.get(self, attr["type"], attr["value"])
+            # decode the value 
+            if attr["type"] in [ constants.ATTR_XOR_MAPPED_ADDRESS, constants.ATTR_XOR_MAPPED_ADDRESS_OPTIONAL ]:
+                attr_obj = attribute.XorMappedAddrAttribute()
+                attr_obj.decode(value=attr["value"], tid=self.transaction_id)
+            elif attr["type"] in [ constants.ATTR_MAPPED_ADDRESS ]:
+                attr_obj = attribute.MappedAddrAttribute()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_OTHER_ADDRESS ]:
+                attr_obj = attribute.OtherAddressAttribute()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_RESPONSE_ORIGIN ]:
+                attr_obj = attribute.ResponseOriginAttribute()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_SOURCE_ADDRESS ]:
+                attr_obj = attribute.SourceAddressAttribute()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_CHANGED_ADDRESS ]:
+                attr_obj = attribute.ChangedAddressAttribute()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_SOFTWARE ]:
+                attr_obj = attribute.AttrSoftware()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_FINGERPRINT ]:
+                attr_obj = attribute.FingerPrintAttribute()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_ERROR_CODE ]:
+                attr_obj = attribute.ErrorCodeAttribute()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_NONCE ]:
+                attr_obj = attribute.AttrNonce()
+                attr_obj.decode(value=attr["value"])
+            elif attr["type"] in [ constants.ATTR_REALM ]:
+                attr_obj = attribute.AttrRealm()
+                attr_obj.decode(value=attr["value"])
             else:
-                attr_obj = attribute.Attribute(self, attr["type"], attr["value"])
+                print(attr["type"], attr["value"])
+                attr_obj = attribute.Attribute(attr["type"])
+                attr_obj.decode(value=attr["value"])
 
-            if attr_obj is not None:
-                self.attributes.append(attr_obj)
-
-    def get_length(self):
-        """return length of the message"""
-        return 0
+            # append to the list
+            self.attributes.append(attr_obj)
 
     def __str__(self):
         """to string representation"""
@@ -131,7 +158,7 @@ class Codec:
             # data remaining for next attributes
             pl = pl[4+attr_length+pad_length:]
 
-        rsp = StunMessage(stunclass, stunmethod)
+        rsp = Message(stunclass, stunmethod, [])
         rsp.msglength = stunlength
         rsp.magic_cookie = magic_cookie
         rsp.transaction_id = transaction_id
@@ -141,15 +168,35 @@ class Codec:
 
     def encode(self, m):
         """encode the stun message"""
+        # encode attributes
+        msg_attr = b""
+        # attrib
+        for cur_attr in m.attributes:
+            attr_value = cur_attr.encode()
+            data_attr =  struct.pack("!HH", cur_attr.attr_type, len(attr_value))
+            data_attr += attr_value
+
+            # padding ?
+            while 4-(len(data_attr)% 4) != 4:
+                data_attr += b"\x00"*(4-(len(data_attr)% 4))
+            msg_attr += data_attr
+
+        attr_length = len(msg_attr)
+
         # add message class and method
         stuntype = (((m.msgclass & 0x02) << 7) | ((m.msgclass & 0x01) << 4)) | m.msgmethod & 0x3EEF
         buf = struct.pack("!H", stuntype)
 
         # append message size
-        buf += struct.pack("!H", m.get_length())
+        buf += struct.pack("!H", attr_length)
         buf += struct.pack("!L", m.magic_cookie)
         buf += struct.pack("!12s", m.transaction_id)
 
-        return buf
-        pass
+        # append attributes
+        buf += msg_attr
 
+        return buf
+
+    def send(self, data):
+        """send data"""
+        pass
