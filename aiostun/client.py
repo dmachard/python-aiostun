@@ -27,8 +27,8 @@ class StunUdpProtocol:
         self._transport.sendto(data)
 
     def error_received(self, exc):
-        """on error received"""
-        print('Error received:', exc)
+        """on error"""
+        print('error:', exc)
 
     def connection_lost(self, exc):
         """on connection lost"""
@@ -54,8 +54,8 @@ class StunTcpProtocol:
         self._transport.write(data)
 
     def error_received(self, exc):
-        """on error received"""
-        print('Error received:', exc)
+        """on error"""
+        print('error:', exc)
 
     def connection_lost(self, exc):
         """on connection lost"""
@@ -173,3 +173,11 @@ class Client:
                 return mapped_addr
 
         return attr.params
+
+    async def discover(self):
+        """todo https://www.rfc-editor.org/rfc/rfc3489#section-10.1"""
+        pass
+
+    async def refresh(self):
+        """todo nat"""
+        pass

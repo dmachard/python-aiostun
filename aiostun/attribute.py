@@ -34,6 +34,14 @@ class Attribute:
         """human string representation"""
         return [ "%s" % self.params["value"] ]
 
+# https://www.rfc-editor.org/rfc/rfc3489#section-11.2.1
+# 0                   1                   2                   3
+#     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+#    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#    |x x x x x x x x|    Family     |           Port                |
+#    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#    |                             Address                           |
+#    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 class AttributeAddr(Attribute):
     def to_string(self):
         """human string representation"""
@@ -63,11 +71,14 @@ class AttributeAddr(Attribute):
 class AttributeStr(Attribute):
     def __init__(self, attr_type, attr_value):
         Attribute.__init__(self, attr_type)
-        self.params["value"] = attr_value if isinstance(attr_value, str) else attr_value.decode()
+        self.params["value"] = attr_value
     def to_string(self):
-        return [ "Value: %s" % self.params["value"] ]
+        r = self.params["value"]
+        r = "%s" % r if isinstance(r, str) else "%s" % r.decode()
+        return [ r ]
     def encode(self):
-        return self.params["value"].encode()
+        r = self.params["value"]
+        return r.encode() if isinstance(r, str) else r
         
 
 class XorMappedAddrAttribute(Attribute):
@@ -108,6 +119,8 @@ class XorMappedAddrAttribute(Attribute):
         self.params["family"] = constants.FAMILY_NAMES[family]
         self.params["port"] = port
         self.params["ip"] = ip
+
+# basic address (ip/port) attributes
 class MappedAddrAttribute(AttributeAddr):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_MAPPED_ADDRESS)
@@ -124,25 +137,14 @@ class ChangedAddressAttribute(AttributeAddr):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_CHANGED_ADDRESS)
 
-
-class FingerPrintAttribute(Attribute):
-    def __init__(self):
-        Attribute.__init__(self, attr_type=constants.ATTR_FINGERPRINT)
-    def to_string(self):
-        return [ "CRC-32: 0x%s" % self.params["crc32"].hex() ]
-    def decode(self, value):
-        self.params["crc32"] = value
-
-class AttrNonce(Attribute):
-    def __init__(self):
-        Attribute.__init__(self, attr_type=constants.ATTR_NONCE)
-    def to_string(self):
-        return [ "Nonce: 0x%s" % self.params["nonce"].decode()]
-    def decode(self, value):
-        self.params["nonce"] = value
-    def encode(self):
-        return self.params["nonce"]
-
+# https://www.rfc-editor.org/rfc/rfc3489#section-11.2.9
+# 0                   1                   2                   3
+#      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+#     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#     |                   0                     |Class|     Number    |
+#     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#     |      Reason Phrase (variable)                                ..
+#     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 class ErrorCodeAttribute(Attribute):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_ERROR_CODE)
@@ -157,6 +159,23 @@ class ErrorCodeAttribute(Attribute):
         err_phrase = value[4:].decode()
         self.params["code"] = err_code
         self.params["phrase"] = err_phrase
+
+
+# https://www.rfc-editor.org/rfc/rfc3489#section-11.2.8
+class AttrIntegrity(AttributeStr):
+    def __init__(self, value):
+        AttributeStr.__init__(self, attr_type=constants.ATTR_MESSAGE_INTEGRITY, attr_value=value)
+    def to_string(self):
+         return [ "0x%s" % self.params["value"].hex() ]
+class AttrFingerPrint(AttributeStr):
+    def __init__(self, value):
+        AttributeStr.__init__(self, attr_type=constants.ATTR_FINGERPRINT, attr_value=value)
+    def to_string(self):
+         return [ "0x%s" % self.params["value"].hex() ]
+
+class AttrNonce(AttributeStr):
+    def __init__(self, value):
+        AttributeStr.__init__(self, attr_type=constants.ATTR_NONCE, attr_value=value)
 
 class AttrSoftware(AttributeStr):
     def __init__(self, value):

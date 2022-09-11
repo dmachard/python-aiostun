@@ -15,23 +15,12 @@ import asyncio
 # turn.matrix.org 3478;443 UDP;TCP;TLS IP4;IP6
 # turn.fairmeeting.net 443;5349 UDP;TLS IP4;IP6
 # stun.incentre.net 3478;5349 UDP;TCP;TLS IP4
+# stun.framasoft.org 3478 UDP IP4;IP6
 
 async def main():
 
-    async with aiostun.Client(host="turn.matrix.org", port=3478, family=aiostun.IP4, proto=aiostun.UDP) as stunc:
+    async with aiostun.Client(host="stun.framasoft.org", port=3478, family=aiostun.IP4, proto=aiostun.UDP) as stunc:
         mapped_addr = await stunc.get_mapped_address()
         print(mapped_addr)
-
-        stun_req = aiostun.Message(msgclass=aiostun.CLASS_REQUEST, 
-                                    msgmethod=aiostun.METHOD_ALLOCATE,
-                                    attrs=[
-                                        aiostun.AttrRealm(value="hello"),
-                                        aiostun.AttrUsername(value="world"),
-                                        aiostun.AttrSoftware(value="aiostun")
-                                    ])
-
-        success = stunc.send_request(stun_req)
-        resp = await stunc.wait_for_resp()
-        print(resp)
 
 asyncio.run(main())

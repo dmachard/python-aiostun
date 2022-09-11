@@ -47,36 +47,43 @@ class Message(object):
             if attr["type"] in [ constants.ATTR_XOR_MAPPED_ADDRESS, constants.ATTR_XOR_MAPPED_ADDRESS_OPTIONAL ]:
                 attr_obj = attribute.XorMappedAddrAttribute()
                 attr_obj.decode(value=attr["value"], tid=self.transaction_id)
+                
             elif attr["type"] in [ constants.ATTR_MAPPED_ADDRESS ]:
                 attr_obj = attribute.MappedAddrAttribute()
                 attr_obj.decode(value=attr["value"])
+
             elif attr["type"] in [ constants.ATTR_OTHER_ADDRESS ]:
                 attr_obj = attribute.OtherAddressAttribute()
                 attr_obj.decode(value=attr["value"])
+
             elif attr["type"] in [ constants.ATTR_RESPONSE_ORIGIN ]:
                 attr_obj = attribute.ResponseOriginAttribute()
                 attr_obj.decode(value=attr["value"])
+
             elif attr["type"] in [ constants.ATTR_SOURCE_ADDRESS ]:
                 attr_obj = attribute.SourceAddressAttribute()
                 attr_obj.decode(value=attr["value"])
+
             elif attr["type"] in [ constants.ATTR_CHANGED_ADDRESS ]:
                 attr_obj = attribute.ChangedAddressAttribute()
                 attr_obj.decode(value=attr["value"])
+
             elif attr["type"] in [ constants.ATTR_SOFTWARE ]:
                 attr_obj = attribute.AttrSoftware(attr["value"])
-                #attr_obj.decode(value=attr["value"])
+
             elif attr["type"] in [ constants.ATTR_FINGERPRINT ]:
-                attr_obj = attribute.FingerPrintAttribute()
-                attr_obj.decode(value=attr["value"])
+                attr_obj = attribute.AttrFingerPrint(attr["value"])
+
             elif attr["type"] in [ constants.ATTR_ERROR_CODE ]:
                 attr_obj = attribute.ErrorCodeAttribute()
                 attr_obj.decode(value=attr["value"])
+
             elif attr["type"] in [ constants.ATTR_NONCE ]:
-                attr_obj = attribute.AttrNonce()
-                attr_obj.decode(value=attr["value"])
+                attr_obj = attribute.AttrNonce(attr["value"])
+
             elif attr["type"] in [ constants.ATTR_REALM ]:
                 attr_obj = attribute.AttrRealm(attr["value"])
-                #attr_obj.decode(value=attr["value"])
+
             else:
                 print(attr["type"], attr["value"])
                 attr_obj = attribute.Attribute(attr["type"])
