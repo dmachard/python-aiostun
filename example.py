@@ -4,7 +4,6 @@ import asyncio
 # list of online server
 
 # stun.ekiga.net 3478 UDP
-# stun.nextcloud.com 3478;443 UDP;TCP
 # stun.l.google.com;stun[1-2-3-4].l.google.com 19302 UDP IP4;IP6
 # openrelay.metered.ca 80;443 UDP;TCP;TLS IP4
 # stun.stunprotocol.org 3478 UDP;TCP IP4;IP6

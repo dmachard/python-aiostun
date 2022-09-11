@@ -7,38 +7,12 @@ from aiostun import constants
 from aiostun import stun
 from aiostun import attribute
 
-class StunUdpProtocol:
-    def __init__(self, client):
+class TransportProtocol:
+    def __init__(self, client, proto):
         """init"""
         self._client = client
         self._transport = None
-
-    def connection_made(self, transport):
-        """on connection made"""
-        self._transport = transport
-        self._client.send = self.send
-
-    def datagram_received(self, data, addr):
-        """on datagram received"""
-        self._client.feed_data(data)
-
-    def send(self, data):
-        """send data"""
-        self._transport.sendto(data)
-
-    def error_received(self, exc):
-        """on error"""
-        print('error:', exc)
-
-    def connection_lost(self, exc):
-        """on connection lost"""
-        pass
-
-class StunTcpProtocol:
-    def __init__(self, client):
-        """init"""
-        self._client = client
-        self._transport = None
+        self._proto = proto
 
     def connection_made(self, transport):
         """on connection made"""
@@ -46,12 +20,19 @@ class StunTcpProtocol:
         self._client.send = self.send
 
     def data_received(self, data):
-        """on data received"""
+        """on tcp/tls data received"""
         self._client.feed_data(data=data)
+
+    def datagram_received(self, data, addr):
+        """on udp datagram received"""
+        self._client.feed_data(data)
 
     def send(self, data):
         """send"""
-        self._transport.write(data)
+        if self._proto == constants.IPPROTO_UDP:
+            self._transport.sendto(data)
+        if self._proto in [ constants.IPPROTO_TCP, constants.IPPROTO_TLS ]:
+            self._transport.write(data)
 
     def error_received(self, exc):
         """on error"""
@@ -75,6 +56,14 @@ class Client:
 
     async def __aenter__(self):
         """aenter"""
+        return await self.connect()
+
+    async def __aexit__(self, exc_type, exc, tb):
+        """aexit"""
+        self.close()
+
+    async def connect(self):
+        """connect to remote"""
         loop = asyncio.get_event_loop()
         kwargs = {}
         if self._family == constants.FAMILY_IP4:
@@ -84,14 +73,14 @@ class Client:
 
         if self._ipproto == constants.IPPROTO_UDP:
             kwargs['remote_addr']= self._host, self._port
-            protocol = StunUdpProtocol(self._stun_codec)
+            protocol = TransportProtocol(self._stun_codec, self._ipproto)
             kwargs['protocol_factory'] = lambda: protocol
             coro = loop.create_datagram_endpoint(**kwargs)
 
         if self._ipproto == constants.IPPROTO_TCP:
             kwargs['host']= self._host
             kwargs['port'] = self._port
-            protocol = StunTcpProtocol(self._stun_codec)
+            protocol = TransportProtocol(self._stun_codec, self._ipproto)
             kwargs['protocol_factory'] = lambda: protocol
             coro = loop.create_connection(**kwargs)
 
@@ -102,17 +91,18 @@ class Client:
             kwargs['host']= self._host
             kwargs['port'] = self._port
             kwargs['ssl'] = sslcontext
-            protocol = StunTcpProtocol(self._stun_codec)
+            protocol = TransportProtocol(self._stun_codec, self._ipproto)
             kwargs['protocol_factory'] = lambda: protocol
             coro = loop.create_connection(**kwargs)
+
         try:
             self._transport, _ = await asyncio.wait_for(coro, timeout=self._timeout)
         except asyncio.TimeoutError:
             return self
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
-        """aexit"""
+    def close(self):
+        """close transport"""
         if self._transport is not None:
             self._transport.close()
 
