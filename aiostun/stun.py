@@ -63,8 +63,8 @@ class Message(object):
                 attr_obj = attribute.ChangedAddressAttribute()
                 attr_obj.decode(value=attr["value"])
             elif attr["type"] in [ constants.ATTR_SOFTWARE ]:
-                attr_obj = attribute.AttrSoftware()
-                attr_obj.decode(value=attr["value"])
+                attr_obj = attribute.AttrSoftware(attr["value"])
+                #attr_obj.decode(value=attr["value"])
             elif attr["type"] in [ constants.ATTR_FINGERPRINT ]:
                 attr_obj = attribute.FingerPrintAttribute()
                 attr_obj.decode(value=attr["value"])
@@ -75,8 +75,8 @@ class Message(object):
                 attr_obj = attribute.AttrNonce()
                 attr_obj.decode(value=attr["value"])
             elif attr["type"] in [ constants.ATTR_REALM ]:
-                attr_obj = attribute.AttrRealm()
-                attr_obj.decode(value=attr["value"])
+                attr_obj = attribute.AttrRealm(attr["value"])
+                #attr_obj.decode(value=attr["value"])
             else:
                 print(attr["type"], attr["value"])
                 attr_obj = attribute.Attribute(attr["type"])
@@ -151,7 +151,8 @@ class Codec:
             (attr_type, attr_length,) = struct.unpack("!HH", pl[:4])
 
             # padding ? always a multiple of 4 bytes
-            pad_length = ((attr_length+4) % 4)
+            pad_mod = 4-((attr_length+4) % 4)
+            pad_length = 0 if pad_mod == 4 else pad_mod
 
             attrs.append( {"type": attr_type, "value": pl[4:4+attr_length]} )
 

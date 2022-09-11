@@ -23,11 +23,11 @@ async def main():
         print(mapped_addr)
 
         stun_req = aiostun.Message(msgclass=aiostun.CLASS_REQUEST, 
-                                    msgmethod=2, #aiostun.METHOD_BINDING,
+                                    msgmethod=aiostun.METHOD_ALLOCATE,
                                     attrs=[
-                                        #aiostun.AttrRealm(value="hello"),
-                                        # aiostun.AttrUsername(value="world"),
-                                        # aiostun.AttrSoftware(value="aiostun")
+                                        aiostun.AttrRealm(value="hello"),
+                                        aiostun.AttrUsername(value="world"),
+                                        aiostun.AttrSoftware(value="aiostun")
                                     ])
 
         success = stunc.send_request(stun_req)

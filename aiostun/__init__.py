@@ -11,4 +11,9 @@ from aiostun.constants import IPPROTO_TCP as TCP
 from aiostun.constants import IPPROTO_TLS as TLS
 
 from aiostun.constants import CLASS_REQUEST
+from aiostun.constants import CLASS_INDICATION
+
 from aiostun.constants import METHOD_BINDING
+from aiostun.constants import METHOD_SHARED_SECRET
+from aiostun.constants import METHOD_ALLOCATE
+from aiostun.constants import METHOD_REFRESH
