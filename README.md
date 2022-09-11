@@ -35,5 +35,5 @@ asyncio.run(main())
 Running all test units.
 
 ```bash
-python3 -m unittest discover tests/
+python3 -m unittest discover tests/ -v
 ```
