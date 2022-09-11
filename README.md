@@ -2,7 +2,7 @@
 
 ## Key Features
 
-- Support RFC5389/RFC8489
+- Support RFC3489/5389/8489
 - Transports UDP, TCP and TLS
 - IPv4 and IPv6 support
 

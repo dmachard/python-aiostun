@@ -18,7 +18,7 @@ import asyncio
 
 async def main():
 
-    async with aiostun.Client(host="stun.framasoft.org", port=3478, family=aiostun.IP4, proto=aiostun.UDP) as stunc:
+    async with aiostun.Client(host="turn.matrix.org", port=3478, family=aiostun.IP4, proto=aiostun.UDP) as stunc:
         mapped_addr = await stunc.get_mapped_address()
         print(mapped_addr)
 

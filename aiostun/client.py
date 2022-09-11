@@ -44,7 +44,7 @@ class TransportProtocol:
 
 
 class Client:
-    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, proto=constants.IPPROTO_UDP):
+    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, proto=constants.IPPROTO_UDP, timeout=15):
         """init"""
         self._host = host
         self._port = port
@@ -52,7 +52,7 @@ class Client:
         self._ipproto = proto
         self._stun_codec = stun.Codec()
         self._transport = None
-        self._timeout = 5
+        self._timeout = timeout
 
     async def __aenter__(self):
         """aenter"""
@@ -124,7 +124,10 @@ class Client:
         if self._transport is None:
             return None
 
-        resp = await asyncio.wait_for(self._stun_codec._queue.get(), timeout=self._timeout)
+        try:
+            resp = await asyncio.wait_for(self._stun_codec._queue.get(), timeout=self._timeout)
+        except asyncio.TimeoutError:
+            return None
         return resp
 
     async def bind_request(self):
@@ -139,6 +142,8 @@ class Client:
 
         # wait for response
         resp = await self.wait_for_resp()
+        if resp is None:
+            return None
 
         #If the message class is "Success Response" or "Error Response"
         # checks that the transaction ID matches the request
@@ -165,9 +170,18 @@ class Client:
         return attr.params
 
     async def discover(self):
-        """todo https://www.rfc-editor.org/rfc/rfc3489#section-10.1"""
-        pass
+        """Discovery Process"""
+        # https://www.rfc-editor.org/rfc/rfc3489#section-10.1
 
-    async def refresh(self):
-        """todo nat"""
-        pass
+        # Test I: the client sends a STUN Binding Request to a server, 
+        # without any flags set in the CHANGE-REQUEST attribute, and without the RESPONSE-ADDRESS attribute.
+
+        # Test II: the client sends a Binding Request with both the "change IP" and "change port" flags 
+        # from the CHANGE-REQUEST attribute set.
+
+        # Test III: the client sends a Binding Request with only the "change port" flag set.
+  
+        # perform test connectivity
+        resp = await self.bind_request()
+        if resp is None: 
+            return "NO CONNECTIVITY"
