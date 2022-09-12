@@ -4,6 +4,22 @@ import aiostun
 
 
 class TestDecode(unittest.TestCase):
+    def test_valid_classicstun_binding_request(self):
+        """decode classic stun Binding Request"""
+        codec = aiostun.Codec()
+
+        # Message Type = Binding Success Response
+        Binding_Req = "0001"
+        # Message Length 
+        Binding_Req += "0000"
+        # Message Transaction Id
+        Binding_Req += "8112a4427a54477269564651786d7749"
+
+        codec.buf = bytes.fromhex(Binding_Req)
+        decoded = codec.decode()
+       
+        self.assertIsNotNone(decoded)
+
     def test_valid_binding_request(self):
         """decode Binding Request"""
         codec = aiostun.Codec()
