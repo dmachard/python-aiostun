@@ -11,6 +11,7 @@ def gen_id(length=12):
     chars = string.ascii_lowercase
     chars += string.ascii_uppercase
     return b''.join([random.choice(chars).encode() for i in range(length)])
+
 class Message(object):
     def __init__(self, msgclass, msgmethod, attrs):
         """init"""
@@ -109,6 +110,12 @@ class Message(object):
 
         return "\n".join(ret)
 
+class ClassicMessage(Message):
+    def __init__(self, msgclass, msgmethod, attrs):
+        Message.__init__(self, msgclass, msgmethod, attrs)
+        self.magic_cookie = 0
+        self.transaction_id = gen_id(length=16)
+
 class Codec:
     def __init__(self):
         """init"""
@@ -148,7 +155,11 @@ class Codec:
 
         # read magic cookie and transactionid
         (magic_cookie,) = struct.unpack("!L", pl[4:8])
-        (transaction_id,) = struct.unpack("!12s", pl[8:20])
+        if magic_cookie != constants.MAGIC_COOKIE:
+            magic_cookie = 0
+            (transaction_id,) = struct.unpack("!16s", pl[4:20])
+        else:
+            (transaction_id,) = struct.unpack("!12s", pl[8:20])
 
         # finally, decode attributes
         pl = pl[20:]
@@ -197,8 +208,11 @@ class Codec:
 
         # append message size
         buf += struct.pack("!H", attr_length)
-        buf += struct.pack("!L", m.magic_cookie)
-        buf += struct.pack("!12s", m.transaction_id)
+        if m.magic_cookie > 0:
+            buf += struct.pack("!L", m.magic_cookie)
+            buf += struct.pack("!12s", m.transaction_id)
+        else:
+            buf += struct.pack("!16s", m.transaction_id)
 
         # append attributes
         buf += msg_attr

@@ -2,9 +2,12 @@
 
 ## Key Features
 
-- Support RFC3489/5389/8489
-- Transports UDP, TCP and TLS
-- IPv4 and IPv6 support
+- [x] Support RFC3489
+- [x] Transports UDP, TCP and TLS
+- [x] IPv4 and IPv6 support
+- [] Support RFC5389
+- [] Support RFC5780
+- [] Support RFC8489
 
 ## Installation
 

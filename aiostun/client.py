@@ -106,6 +106,28 @@ class Client:
         if self._transport is not None:
             self._transport.close()
 
+    def get_local_addr(self):
+        """get local ip and port"""
+        if self._transport is None:
+            return None
+
+        sock = self._transport.get_extra_info('socket')
+        if sock is None:
+            return None
+
+        return sock.getsockname()
+
+    def get_remote_addr(self):
+        """get remote ip and port"""
+        if self._transport is None:
+            return None
+
+        sock = self._transport.get_extra_info('socket')
+        if sock is None:
+            return None
+
+        return sock.getpeername()
+
     def send_request(self, req):
         """wait request"""
         if self._transport is None:
@@ -130,10 +152,14 @@ class Client:
             return None
         return resp
 
-    async def bind_request(self):
+    async def bind_request(self, use_classicstun=False):
         """send bind request"""
+        stun_proto = stun.Message
+        if use_classicstun:
+            stun_proto = stun.ClassicMessage
+
         # basic stun message
-        stun_req = stun.Message(constants.CLASS_REQUEST, constants.METHOD_BINDING, [])
+        stun_req = stun_proto(constants.CLASS_REQUEST, constants.METHOD_BINDING, [])
 
         # send it
         success = self.send_request(req=stun_req)
@@ -153,11 +179,11 @@ class Client:
 
         return resp
 
-    async def get_mapped_address(self):
+    async def get_mapped_address(self, use_classicstun=False):
         """get mapped address"""
         mapped_addr = {}
 
-        resp = await self.bind_request()
+        resp = await self.bind_request(use_classicstun=use_classicstun)
         if resp is None:
             return mapped_addr
 
@@ -168,20 +194,3 @@ class Client:
                 return mapped_addr
 
         return attr.params
-
-    async def discover(self):
-        """Discovery Process"""
-        # https://www.rfc-editor.org/rfc/rfc3489#section-10.1
-
-        # Test I: the client sends a STUN Binding Request to a server, 
-        # without any flags set in the CHANGE-REQUEST attribute, and without the RESPONSE-ADDRESS attribute.
-
-        # Test II: the client sends a Binding Request with both the "change IP" and "change port" flags 
-        # from the CHANGE-REQUEST attribute set.
-
-        # Test III: the client sends a Binding Request with only the "change port" flag set.
-  
-        # perform test connectivity
-        resp = await self.bind_request()
-        if resp is None: 
-            return "NO CONNECTIVITY"
