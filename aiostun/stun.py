@@ -95,17 +95,21 @@ class Message(object):
 
     def __str__(self):
         """to string representation"""
-        ret = ["Header:"]
-        ret.append("\tMessage Type:")
-        ret.append("\t\tClass: %s" % self.get_class())
-        ret.append("\t\tMethod: %s" % self.get_method())
-        ret.append("\tMessage Length: %s" % self.msglength)
-        ret.append("\tMessage TransactionID: %s" % self.transaction_id.decode())
+        if self.magic_cookie>0:
+            ret = ["STUN:"]
+        else:
+            ret = ["CLASSIC-STUN:"]
+        ret.append("\tHeader:")
+        ret.append("\t\tMessage Type:")
+        ret.append("\t\t\tClass: %s" % self.get_class())
+        ret.append("\t\t\tMethod: %s" % self.get_method())
+        ret.append("\t\tMessage Length: %s" % self.msglength)
+        ret.append("\t\tMessage TransactionID: %s" % self.transaction_id.decode())
 
         if len(self.attributes):
-            ret.append("Attributes:")
+            ret.append("\tAttributes:")
             for attr in self.attributes:
-                ret.append("\t%s" % attr)
+                ret.append("\t\t%s" % attr)
             #ret.append("")
 
         return "\n".join(ret)

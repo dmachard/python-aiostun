@@ -19,7 +19,7 @@ class Attribute:
         """sting representation"""
         ret = [ self.get_name() ]
         for l in self.to_string():
-            ret.append( "\t* %s" % l )
+            ret.append( "\t\t* %s" % l )
         return "\n".join(ret)
 
     def decode(self, value):
