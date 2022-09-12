@@ -27,10 +27,10 @@ class TransportProtocol:
         """on udp datagram received"""
         self._client.feed_data(data)
 
-    def send(self, data):
+    def send(self, data, addr=None):
         """send"""
         if self._proto == constants.IPPROTO_UDP:
-            self._transport.sendto(data)
+            self._transport.sendto(data, addr=addr)
         if self._proto in [ constants.IPPROTO_TCP, constants.IPPROTO_TLS ]:
             self._transport.write(data)
 
@@ -44,7 +44,7 @@ class TransportProtocol:
 
 
 class Client:
-    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, proto=constants.IPPROTO_UDP, timeout=15):
+    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, proto=constants.IPPROTO_UDP, timeout=2):
         """init"""
         self._host = host
         self._port = port
@@ -62,7 +62,7 @@ class Client:
         """aexit"""
         self.close()
 
-    async def connect(self):
+    async def connect(self, remote_addr=True):
         """connect to remote"""
         loop = asyncio.get_event_loop()
         kwargs = {}
@@ -72,7 +72,7 @@ class Client:
             kwargs['family'] = socket.AF_INET6
 
         if self._ipproto == constants.IPPROTO_UDP:
-            kwargs['remote_addr']= self._host, self._port
+            if remote_addr: kwargs['remote_addr']= self._host, self._port
             protocol = TransportProtocol(self._stun_codec, self._ipproto)
             kwargs['protocol_factory'] = lambda: protocol
             coro = loop.create_datagram_endpoint(**kwargs)
@@ -128,7 +128,7 @@ class Client:
 
         return sock.getpeername()
 
-    def send_request(self, req):
+    def send_request(self, req, remote_addr=None):
         """wait request"""
         if self._transport is None:
             return False
@@ -137,7 +137,7 @@ class Client:
         data = self._stun_codec.encode(req)
 
         # send it
-        self._stun_codec.send(data=data)
+        self._stun_codec.send(data=data, addr=remote_addr)
 
         return True
 
@@ -152,17 +152,17 @@ class Client:
             return None
         return resp
 
-    async def bind_request(self, use_classicstun=False):
+    async def bind_request(self, use_classicstun=False, attrs=[], remote_addr=None):
         """send bind request"""
         stun_proto = stun.Message
         if use_classicstun:
             stun_proto = stun.ClassicMessage
 
         # basic stun message
-        stun_req = stun_proto(constants.CLASS_REQUEST, constants.METHOD_BINDING, [])
+        stun_req = stun_proto(constants.CLASS_REQUEST, constants.METHOD_BINDING, attrs)
 
         # send it
-        success = self.send_request(req=stun_req)
+        success = self.send_request(req=stun_req, remote_addr=remote_addr)
         if not success:
             return {}
 

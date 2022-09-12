@@ -46,27 +46,27 @@ class Message(object):
         for attr in attrs:
             # decode the value 
             if attr["type"] in [ constants.ATTR_XOR_MAPPED_ADDRESS, constants.ATTR_XOR_MAPPED_ADDRESS_OPTIONAL ]:
-                attr_obj = attribute.XorMappedAddrAttribute()
+                attr_obj = attribute.AttrXorMappedAddr()
                 attr_obj.decode(value=attr["value"], tid=self.transaction_id)
                 
             elif attr["type"] in [ constants.ATTR_MAPPED_ADDRESS ]:
-                attr_obj = attribute.MappedAddrAttribute()
+                attr_obj = attribute.AttrMappedAddr()
                 attr_obj.decode(value=attr["value"])
 
             elif attr["type"] in [ constants.ATTR_OTHER_ADDRESS ]:
-                attr_obj = attribute.OtherAddressAttribute()
+                attr_obj = attribute.AttrOtherAddress()
                 attr_obj.decode(value=attr["value"])
 
             elif attr["type"] in [ constants.ATTR_RESPONSE_ORIGIN ]:
-                attr_obj = attribute.ResponseOriginAttribute()
+                attr_obj = attribute.AttrResponseOrigin()
                 attr_obj.decode(value=attr["value"])
 
             elif attr["type"] in [ constants.ATTR_SOURCE_ADDRESS ]:
-                attr_obj = attribute.SourceAddressAttribute()
+                attr_obj = attribute.AttrSourceAddress()
                 attr_obj.decode(value=attr["value"])
 
             elif attr["type"] in [ constants.ATTR_CHANGED_ADDRESS ]:
-                attr_obj = attribute.ChangedAddressAttribute()
+                attr_obj = attribute.AttrChangedAddress()
                 attr_obj.decode(value=attr["value"])
 
             elif attr["type"] in [ constants.ATTR_SOFTWARE ]:
@@ -76,7 +76,7 @@ class Message(object):
                 attr_obj = attribute.AttrFingerPrint(attr["value"])
 
             elif attr["type"] in [ constants.ATTR_ERROR_CODE ]:
-                attr_obj = attribute.ErrorCodeAttribute()
+                attr_obj = attribute.AttrErrorCode()
                 attr_obj.decode(value=attr["value"])
 
             elif attr["type"] in [ constants.ATTR_NONCE ]:

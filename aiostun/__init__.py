@@ -1,8 +1,9 @@
 from aiostun.client import Client
+from aiostun.nat import NAT
 from aiostun.stun import Codec
 from aiostun.stun import Message
 
-from aiostun.attribute import AttrUsername, AttrIntegrity
+from aiostun.attribute import AttrChangeRequest
 
 from aiostun.constants import FAMILY_IP4 as IP4
 from aiostun.constants import FAMILY_IP6 as IP6

@@ -81,7 +81,7 @@ class AttributeStr(Attribute):
         return r.encode() if isinstance(r, str) else r
         
 
-class XorMappedAddrAttribute(Attribute):
+class AttrXorMappedAddr(Attribute):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_XOR_MAPPED_ADDRESS)
     def to_string(self):
@@ -121,21 +121,35 @@ class XorMappedAddrAttribute(Attribute):
         self.params["ip"] = ip
 
 # basic address (ip/port) attributes
-class MappedAddrAttribute(AttributeAddr):
+class AttrMappedAddr(AttributeAddr):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_MAPPED_ADDRESS)
-class OtherAddressAttribute(AttributeAddr):
+class AttrOtherAddress(AttributeAddr):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_OTHER_ADDRESS)
-class ResponseOriginAttribute(AttributeAddr):
+class AttrResponseOrigin(AttributeAddr):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_RESPONSE_ORIGIN)
-class SourceAddressAttribute(AttributeAddr):
+class AttrSourceAddress(AttributeAddr):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_SOURCE_ADDRESS)
-class ChangedAddressAttribute(AttributeAddr):
+class AttrChangedAddress(AttributeAddr):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_CHANGED_ADDRESS)
+
+class AttrChangeRequest(Attribute):
+    def __init__(self, changeIp=False, changePort=False):
+        Attribute.__init__(self, attr_type=constants.ATTR_CHANGE_REQUEST)
+        self.params["change-ip"] = changeIp
+        self.params["change-port"] = changePort
+
+    def encode(self):
+        flags = 0
+
+        if self.params["change-ip"]: flags += 4
+        if self.params["change-port"]: flags += 2
+
+        return struct.pack("!L", flags)
 
 # https://www.rfc-editor.org/rfc/rfc3489#section-11.2.9
 # 0                   1                   2                   3
@@ -145,7 +159,7 @@ class ChangedAddressAttribute(AttributeAddr):
 #     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #     |      Reason Phrase (variable)                                ..
 #     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-class ErrorCodeAttribute(Attribute):
+class AttrErrorCode(Attribute):
     def __init__(self):
         Attribute.__init__(self, attr_type=constants.ATTR_ERROR_CODE)
 
@@ -167,6 +181,7 @@ class AttrIntegrity(AttributeStr):
         AttributeStr.__init__(self, attr_type=constants.ATTR_MESSAGE_INTEGRITY, attr_value=value)
     def to_string(self):
          return [ "0x%s" % self.params["value"].hex() ]
+
 class AttrFingerPrint(AttributeStr):
     def __init__(self, value):
         AttributeStr.__init__(self, attr_type=constants.ATTR_FINGERPRINT, attr_value=value)
