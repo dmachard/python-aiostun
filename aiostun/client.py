@@ -187,9 +187,9 @@ class Client:
         if resp is None:
             return mapped_addr
 
-        attr = resp.get_attribute(attribute.XorMappedAddrAttribute)
+        attr = resp.get_attribute(attribute.AttrXorMappedAddr)
         if attr is None:
-            attr = resp.get_attribute(attribute.MappedAddrAttribute)
+            attr = resp.get_attribute(attribute.AttrMappedAddr)
             if attr is None:
                 return mapped_addr
 
