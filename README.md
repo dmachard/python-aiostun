@@ -33,6 +33,17 @@ async def main():
 asyncio.run(main())
 ```
 
+Default constants for family:
+- `aiostun.IP4` (default)
+- `aiostun.IP6`
+
+Default constants for IP protocol:
+- `aiostun.UDP` (default)
+- `aiostun.TCP`
+- `aiostun.TLS`
+
+The default remote port is `3478` with a timeout connection of `2 seconds`.
+
 ## For developers
 
 Running all test units.
