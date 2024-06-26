@@ -13,32 +13,31 @@ RESTRICTED_NAT = "Restricted NAT"
 RESTRICTED_PORT_NAT = "Restricted Port NAT"
 
 class NAT:
-    async def discover(self, use_classicstun=False):
+    __DEFAULT_STUN_HOST__ = "turn.matrix.org"
+    __DEFAULT_STUN_PORT__ = 3478
+    async def discover(self, use_classicstun=False, **kwargs):
         """Discovery NAT"""
         if use_classicstun:
-            return await self.classic_discover()
-        
+            return await self.classic_discover(**kwargs)
+
         raise Exception("Not yet implemented")
 
-    async def classic_discover(self):
+    async def classic_discover(self, stun_host=__DEFAULT_STUN_HOST__, stun_port=__DEFAULT_STUN_PORT__):
         """discover like described in the rfc3489"""
         nat_behavior = {}
-
-        stun_host = "turn.matrix.org"
-        stun_port = 3478
         use_classicstun = True
 
-        # Test I: the client sends a STUN Binding Request to a server, 
+        # Test I: the client sends a STUN Binding Request to a server,
         # without any flags set in the CHANGE-REQUEST attribute,
         # and without the RESPONSE-ADDRESS attribute.
-        stun_test = client.Client(host=stun_host, port=stun_port, 
+        stun_test = client.Client(host=stun_host, port=stun_port,
                                   family=constants.FAMILY_IP4,
                                   proto=constants.IPPROTO_UDP)
         # connect and get the local ip and port
         await stun_test.connect(remote_addr=False)
 
         # Send bind request without any flag
-        # if no response, the reason can be multiple: UDP blocked ? network issue ? or the server is down ? 
+        # if no response, the reason can be multiple: UDP blocked ? network issue ? or the server is down ?
         resp_test1 = await stun_test.bind_request(use_classicstun=use_classicstun, remote_addr=(stun_host, stun_port))
         if resp_test1 is None:
            nat_behavior["error"] = NETWORK_ERROR
@@ -62,13 +61,13 @@ class NAT:
             nat_behavior["error"] = PROTOCOL_ERROR
             return nat_behavior
 
-        # Test II: the client sends a Binding Request with both the "change IP" and "change port" flags 
+        # Test II: the client sends a Binding Request with both the "change IP" and "change port" flags
         # from the CHANGE-REQUEST attribute set
         attr_changereq = attribute.AttrChangeRequest(changeIp=True, changePort=True)
-        resp_test2 = await stun_test.bind_request(use_classicstun=use_classicstun, 
+        resp_test2 = await stun_test.bind_request(use_classicstun=use_classicstun,
                                                   attrs=[attr_changereq],
                                                   remote_addr=(stun_host, stun_port))
-        
+
         if mappedAddr.params["ip"] == local_ipI and resp_test2 is None:
             nat_behavior["nat"] = SYMMETRIC_UDP_FIREWALL
             return nat_behavior
@@ -86,7 +85,7 @@ class NAT:
         if mappedAddr.params["ip"] != local_ipI and resp_test2 is None:
 
             remote_addr = (changedaddr.params["ip"], changedaddr.params["port"])
-            resp_test1_again = await stun_test.bind_request(use_classicstun=use_classicstun, 
+            resp_test1_again = await stun_test.bind_request(use_classicstun=use_classicstun,
                                                             attrs=[], remote_addr=remote_addr)
             if resp_test1_again is None:
                 nat_behavior["error"] = PROTOCOL_ERROR
@@ -97,13 +96,13 @@ class NAT:
                 nat_behavior["error"] = PROTOCOL_ERROR
                 return nat_behavior
 
-            if mappedAddr_again.params["ip"] == mappedAddr.params["ip"] and mappedAddr_again.params["port"] == mappedAddr.params["port"]:
+            if not (mappedAddr_again.params["ip"] == mappedAddr.params["ip"] and mappedAddr_again.params["port"] == mappedAddr.params["port"]):
                 nat_behavior["nat"] = SYMMETRIC_NAT
                 return nat_behavior
 
             # Test III: the client sends a Binding Request with only the "change port" flag set.
             attr_changereq3 = attribute.AttrChangeRequest(changeIp=False, changePort=True)
-            remote_addr = (changedaddr.params["ip"], stun_host)
+            remote_addr = (changedaddr.params["ip"], stun_port)
             resp_test3 = await stun_test.bind_request(use_classicstun=use_classicstun,
                                                       attrs=[attr_changereq3],
                                                       remote_addr=remote_addr)
