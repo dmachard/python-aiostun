@@ -102,7 +102,7 @@ class NAT:
 
             # Test III: the client sends a Binding Request with only the "change port" flag set.
             attr_changereq3 = attribute.AttrChangeRequest(changeIp=False, changePort=True)
-            remote_addr = (changedaddr.params["ip"], stun_port)
+            remote_addr = (changedaddr.params["ip"], changedaddr.params["port"])
             resp_test3 = await stun_test.bind_request(use_classicstun=use_classicstun,
                                                       attrs=[attr_changereq3],
                                                       remote_addr=remote_addr)
