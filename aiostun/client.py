@@ -44,7 +44,8 @@ class TransportProtocol:
 
 
 class Client:
-    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, proto=constants.IPPROTO_UDP, timeout=2):
+    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, proto=constants.IPPROTO_UDP, timeout=2
+                 ,cafile=None,):
         """init"""
         self._host = host
         self._port = port
@@ -53,6 +54,7 @@ class Client:
         self._stun_codec = stun.Codec()
         self._transport = None
         self._timeout = timeout
+        self._cafile = cafile
 
     async def __aenter__(self):
         """aenter"""
@@ -85,9 +87,15 @@ class Client:
             coro = loop.create_connection(**kwargs)
 
         if self._ipproto == constants.IPPROTO_TLS:
-            sslcontext = ssl.create_default_context()
-            sslcontext.check_hostname = False
-            sslcontext.verify_mode = ssl.CERT_NONE
+            if self._cafile is None:    
+                sslcontext = ssl.create_default_context()
+                sslcontext.check_hostname = False
+                sslcontext.verify_mode = ssl.CERT_NONE
+            else:
+                sslcontext = ssl.create_default_context(cafile=self._cafile)
+                sslcontext.check_hostname = True
+                sslcontext.verify_mode = ssl.CERT_REQUIRED
+
             kwargs['host']= self._host
             kwargs['port'] = self._port
             kwargs['ssl'] = sslcontext
@@ -98,7 +106,9 @@ class Client:
         try:
             self._transport, _ = await asyncio.wait_for(coro, timeout=self._timeout)
         except asyncio.TimeoutError:
-            return self
+            raise RuntimeError("Timeout error")
+        except ssl.SSLCertVerificationError as e :
+            raise RuntimeError(f"SSL Cert verification error.[{e}]")
         return self
 
     def close(self):
