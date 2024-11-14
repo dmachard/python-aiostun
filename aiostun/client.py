@@ -51,6 +51,8 @@ class Client:
         family=constants.FAMILY_IP4,
         proto=constants.IPPROTO_UDP,
         timeout=2,
+        local_addr=None,
+        local_port=None,
         cafile=None,
     ):
         """init"""
@@ -61,6 +63,8 @@ class Client:
         self._stun_codec = stun.Codec()
         self._transport = None
         self._timeout = timeout
+        self._local_addr = local_addr
+        self._local_port = local_port
         self._cafile = cafile
 
     async def __aenter__(self):
@@ -79,7 +83,8 @@ class Client:
             kwargs["family"] = socket.AF_INET
         if self._family == constants.FAMILY_IP6:
             kwargs["family"] = socket.AF_INET6
-
+        if self._local_addr:
+            kwargs["local_addr"] = (self._local_addr, self._local_port)
         if self._ipproto == constants.IPPROTO_UDP:
             if remote_addr:
                 kwargs["remote_addr"] = self._host, self._port
