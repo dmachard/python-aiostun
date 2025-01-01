@@ -1,4 +1,3 @@
-
 import ssl
 import asyncio
 import socket
@@ -6,6 +5,7 @@ import socket
 from aiostun import constants
 from aiostun import stun
 from aiostun import attribute
+
 
 class TransportProtocol:
     def __init__(self, client, proto):
@@ -31,12 +31,12 @@ class TransportProtocol:
         """send"""
         if self._proto == constants.IPPROTO_UDP:
             self._transport.sendto(data, addr=addr)
-        if self._proto in [ constants.IPPROTO_TCP, constants.IPPROTO_TLS ]:
+        if self._proto in [constants.IPPROTO_TCP, constants.IPPROTO_TLS]:
             self._transport.write(data)
 
     def error_received(self, exc):
         """on error"""
-        print('error:', exc)
+        print("error:", exc)
 
     def connection_lost(self, exc):
         """on connection lost"""
@@ -44,7 +44,17 @@ class TransportProtocol:
 
 
 class Client:
-    def __init__(self, host, port=3478, family=constants.FAMILY_IP4, proto=constants.IPPROTO_UDP, timeout=2):
+    def __init__(
+        self,
+        host,
+        port=3478,
+        family=constants.FAMILY_IP4,
+        proto=constants.IPPROTO_UDP,
+        timeout=2,
+        local_addr=None,
+        local_port=None,
+        cafile=None,
+    ):
         """init"""
         self._host = host
         self._port = port
@@ -53,6 +63,9 @@ class Client:
         self._stun_codec = stun.Codec()
         self._transport = None
         self._timeout = timeout
+        self._local_addr = local_addr
+        self._local_port = local_port
+        self._cafile = cafile
 
     async def __aenter__(self):
         """aenter"""
@@ -67,38 +80,48 @@ class Client:
         loop = asyncio.get_event_loop()
         kwargs = {}
         if self._family == constants.FAMILY_IP4:
-            kwargs['family'] = socket.AF_INET
+            kwargs["family"] = socket.AF_INET
         if self._family == constants.FAMILY_IP6:
-            kwargs['family'] = socket.AF_INET6
-
+            kwargs["family"] = socket.AF_INET6
+        if self._local_addr:
+            kwargs["local_addr"] = (self._local_addr, self._local_port)
         if self._ipproto == constants.IPPROTO_UDP:
-            if remote_addr: kwargs['remote_addr']= self._host, self._port
+            if remote_addr:
+                kwargs["remote_addr"] = self._host, self._port
             protocol = TransportProtocol(self._stun_codec, self._ipproto)
-            kwargs['protocol_factory'] = lambda: protocol
+            kwargs["protocol_factory"] = lambda: protocol
             coro = loop.create_datagram_endpoint(**kwargs)
 
         if self._ipproto == constants.IPPROTO_TCP:
-            kwargs['host']= self._host
-            kwargs['port'] = self._port
+            kwargs["host"] = self._host
+            kwargs["port"] = self._port
             protocol = TransportProtocol(self._stun_codec, self._ipproto)
-            kwargs['protocol_factory'] = lambda: protocol
+            kwargs["protocol_factory"] = lambda: protocol
             coro = loop.create_connection(**kwargs)
 
         if self._ipproto == constants.IPPROTO_TLS:
-            sslcontext = ssl.create_default_context()
-            sslcontext.check_hostname = False
-            sslcontext.verify_mode = ssl.CERT_NONE
-            kwargs['host']= self._host
-            kwargs['port'] = self._port
-            kwargs['ssl'] = sslcontext
+            if self._cafile is None:
+                sslcontext = ssl.create_default_context()
+                sslcontext.check_hostname = False
+                sslcontext.verify_mode = ssl.CERT_NONE
+            else:
+                sslcontext = ssl.create_default_context(cafile=self._cafile)
+                sslcontext.check_hostname = True
+                sslcontext.verify_mode = ssl.CERT_REQUIRED
+
+            kwargs["host"] = self._host
+            kwargs["port"] = self._port
+            kwargs["ssl"] = sslcontext
             protocol = TransportProtocol(self._stun_codec, self._ipproto)
-            kwargs['protocol_factory'] = lambda: protocol
+            kwargs["protocol_factory"] = lambda: protocol
             coro = loop.create_connection(**kwargs)
 
         try:
             self._transport, _ = await asyncio.wait_for(coro, timeout=self._timeout)
         except asyncio.TimeoutError:
-            return self
+            raise RuntimeError("Timeout error")
+        except ssl.SSLCertVerificationError as e:
+            raise RuntimeError(f"SSL Cert verification error.[{e}]")
         return self
 
     def close(self):
@@ -111,7 +134,7 @@ class Client:
         if self._transport is None:
             return None
 
-        sock = self._transport.get_extra_info('socket')
+        sock = self._transport.get_extra_info("socket")
         if sock is None:
             return None
 
@@ -122,7 +145,7 @@ class Client:
         if self._transport is None:
             return None
 
-        sock = self._transport.get_extra_info('socket')
+        sock = self._transport.get_extra_info("socket")
         if sock is None:
             return None
 
@@ -147,7 +170,9 @@ class Client:
             return None
 
         try:
-            resp = await asyncio.wait_for(self._stun_codec._queue.get(), timeout=self._timeout)
+            resp = await asyncio.wait_for(
+                self._stun_codec._queue.get(), timeout=self._timeout
+            )
         except asyncio.TimeoutError:
             return None
         return resp
@@ -171,9 +196,9 @@ class Client:
         if resp is None:
             return None
 
-        #If the message class is "Success Response" or "Error Response"
+        # If the message class is "Success Response" or "Error Response"
         # checks that the transaction ID matches the request
-        if resp.msgclass in [ constants.CLASS_SUCCESS, constants.CLASS_ERROR]:
+        if resp.msgclass in [constants.CLASS_SUCCESS, constants.CLASS_ERROR]:
             if stun_req.transaction_id != resp.transaction_id:
                 return None
 
