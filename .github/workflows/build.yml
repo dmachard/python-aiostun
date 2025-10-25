@@ -8,14 +8,14 @@ on:
 jobs:
 
   python-package:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - uses: actions/setup-python@v6
       with:
-        python-version: '3.12' 
+        python-version: '3.14' 
 
     - name: Install python dependencies
       run: |
